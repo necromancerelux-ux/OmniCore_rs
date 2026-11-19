@@ -1,0 +1,13 @@
+# secrets — never commit
+.env
+.env.*
+!.env.example
+# runtime data
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.db
+.data/
+browser-profile/
+# build output
+target/
