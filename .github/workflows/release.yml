@@ -1,67 +1,12 @@
-name: Release
-
-on:
-  push:
-    tags:
-      - "v*"
-  workflow_dispatch:
-
-permissions:
-  contents: write
-
 jobs:
-  release-linux-x86_64:
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2
-
-      - name: Test
-        run: cargo test --locked --no-default-features
-
-      - name: Build
-        run: cargo build --locked --release --no-default-features
-
-      - name: Package
-        run: |
-          cp target/release/omnicore omnicore-linux-x86_64
-          tar -cf omnicore-linux-x86_64.tar omnicore-linux-x86_64
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: omnicore-linux-x86_64
-          path: |
-            omnicore-linux-x86_64
-            omnicore-linux-x86_64.tar
-
-      - name: Attach to GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            omnicore-linux-x86_64
-            omnicore-linux-x86_64.tar
-
-  release-linux-aarch64:
+  build:
     runs-on: ubuntu-24.04-arm
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2
-
-      - name: Test
+      - name: Check
         run: cargo test --locked --no-default-features
 
       - name: Build
@@ -69,21 +14,19 @@ jobs:
 
       - name: Package
         run: |
-          cp target/release/omnicore omnicore-linux-aarch64
-          tar -cf omnicore-linux-aarch64.tar omnicore-linux-aarch64
+          cp target/release/omnicore omnicore-linux-arm64
+          tar -cf omnicore-linux-arm64.tar omnicore-linux-arm64
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: omnicore-linux-aarch64
-          path: |
-            omnicore-linux-aarch64
-            omnicore-linux-aarch64.tar
-
-      - name: Attach to GitHub Release
+      - uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
         with:
           files: |
-            omnicore-linux-aarch64
-            omnicore-linux-aarch64.tar
+            omnicore-linux-arm64
+            omnicore-linux-arm64.tar
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: omnicore-linux-arm64
+          path: |
+            omnicore-linux-arm64
+            omnicore-linux-arm64.tar

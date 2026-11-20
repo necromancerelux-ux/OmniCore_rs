@@ -240,8 +240,13 @@ pub fn settings_hub(ctx: &SettingsContext) -> (CreateEmbed, Vec<CreateActionRow>
             format!("{} Admin", icons::ADMIN),
         ));
     }
-    buttons.push(secondary("settings:close", "Close"));
+    // Discord allows at most 5 rows x 5 buttons = 25 per message. The owner sees two
+    // extra buttons, so "Close" is dropped when there is no room (ephemeral messages
+    // can be dismissed anyway).
     buttons.push(secondary("help:home", "Help"));
+    if buttons.len() < 25 {
+        buttons.push(secondary("settings:close", "Close"));
+    }
     (embed, components::rows(buttons))
 }
 

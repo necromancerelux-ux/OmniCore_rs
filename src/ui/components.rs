@@ -34,10 +34,12 @@ pub fn row(buttons: Vec<CreateButton>) -> CreateActionRow {
     CreateActionRow::Buttons(buttons)
 }
 
-/// Split buttons into rows of at most five, dropping empty rows.
+/// Split buttons into rows of at most five (max 5 rows), dropping empty rows.
 pub fn rows(buttons: Vec<CreateButton>) -> Vec<CreateActionRow> {
+    // Discord rejects more than 5 rows (25 buttons) per message.
     buttons
         .chunks(5)
+        .take(5)
         .filter(|chunk| !chunk.is_empty())
         .map(|chunk| CreateActionRow::Buttons(chunk.to_vec()))
         .collect()
