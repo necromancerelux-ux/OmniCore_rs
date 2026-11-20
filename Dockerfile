@@ -1,33 +1,38 @@
-# OmniCore Discord bot — multi-stage build (static-ish Linux binary)
+# OmniCore Discord bot — multi-stage build (static musl binary, x86_64 or aarch64)
 # Build:  docker build -t omnicore .
+#         docker build --build-arg WITH_CHROMIUM=1 -t omnicore .   (adds Chromium for Oracle renewal)
 # Run:    docker run --env-file .env -v omnicore-data:/data omnicore
 
-FROM rust:1.85-bookworm AS builder
+FROM rust:1-bookworm AS builder
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    pkg-config libssl-dev musl-tools \
+    pkg-config musl-tools \
     && rm -rf /var/lib/apt/lists/*
-RUN rustup target add x86_64-unknown-linux-musl
 
-COPY Cargo.toml ./
-# Copy sources before resolving deps so offline builds still work after first fetch
+COPY Cargo.toml Cargo.lock ./
 COPY src ./src
 COPY assets ./assets
 
-# Prefer lockfile when present
-COPY Cargo.lock* ./
-
-# Build without browser (Chromium) — curl/paste Oracle flow still works
-RUN cargo build --release --target x86_64-unknown-linux-musl --no-default-features \
-    || (cargo generate-lockfile && cargo build --release --target x86_64-unknown-linux-musl --no-default-features)
+# Build for whatever CPU this image is being built on (x86_64 or aarch64).
+RUN set -eux; \
+    case "$(uname -m)" in \
+      x86_64)  T=x86_64-unknown-linux-musl ;; \
+      aarch64) T=aarch64-unknown-linux-musl ;; \
+      *) echo "unsupported CPU $(uname -m)"; exit 1 ;; \
+    esac; \
+    rustup target add "$T"; \
+    export CC_$(echo "$T" | tr - _)=musl-gcc; \
+    cargo build --locked --release --target "$T"; \
+    cp "target/$T/release/omnicore" /omnicore
 
 FROM debian:bookworm-slim
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates libssl3 \
+ARG WITH_CHROMIUM=0
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
+    && if [ "$WITH_CHROMIUM" = "1" ]; then apt-get install -y --no-install-recommends chromium; fi \
     && rm -rf /var/lib/apt/lists/* \
     && useradd -r -u 10001 -m omnicore
 WORKDIR /app
-COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/omnicore /usr/local/bin/omnicore
+COPY --from=builder /omnicore /usr/local/bin/omnicore
 COPY assets /app/assets
 RUN mkdir -p /data && chown -R omnicore:omnicore /data /app
 USER omnicore

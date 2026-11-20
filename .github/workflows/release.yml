@@ -1,32 +1,55 @@
+name: build-release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
 jobs:
   build:
-    runs-on: ubuntu-24.04-arm
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+          # HidenCloud (and most cheap ARM panels) are aarch64 — this is the one you upload there.
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-musl
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
       - uses: Swatinem/rust-cache@v2
-
-      - name: Check
-        run: cargo test --locked --no-default-features
-
-      - name: Build
-        run: cargo build --locked --release --no-default-features
-
+        with:
+          key: ${{ matrix.target }}
+      - name: Install musl toolchain
+        run: sudo apt-get update && sudo apt-get install -y musl-tools pkg-config
+      - name: Point C dependencies (sqlite, ring) at musl-gcc
+        run: |
+          T="${{ matrix.target }}"
+          echo "CC_${T//-/_}=musl-gcc" >> "$GITHUB_ENV"
+      - name: Test
+        run: cargo test --locked --target ${{ matrix.target }}
+      - name: Build (browser feature ON — it only starts Chromium when Oracle needs a token)
+        run: cargo build --locked --release --target ${{ matrix.target }}
       - name: Package
         run: |
-          cp target/release/omnicore omnicore-linux-arm64
-          tar -cf omnicore-linux-arm64.tar omnicore-linux-arm64
-
+          cp target/${{ matrix.target }}/release/omnicore omnicore-linux-${{ matrix.arch }}
+          gzip -9 -k omnicore-linux-${{ matrix.arch }}
+          ls -l omnicore-linux-${{ matrix.arch }}*
       - uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: |
-            omnicore-linux-arm64
-            omnicore-linux-arm64.tar
-
+          files: omnicore-linux-${{ matrix.arch }}.gz
       - uses: actions/upload-artifact@v4
         with:
-          name: omnicore-linux-arm64
-          path: |
-            omnicore-linux-arm64
-            omnicore-linux-arm64.tar
+          name: omnicore-linux-${{ matrix.arch }}
+          path: omnicore-linux-${{ matrix.arch }}.gz
