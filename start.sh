@@ -8,16 +8,13 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 BIN="${OMNICORE_BIN:-./omnicore}"
-if [[ ! -x "$BIN" && -x "./omnicore-linux-$(uname -m)" ]]; then
-  BIN="./omnicore-linux-$(uname -m)"
-fi
 if [[ ! -x "$BIN" ]]; then
   BIN="./target/release/omnicore"
 fi
 if [[ ! -x "$BIN" ]]; then
   echo "No binary found. Build first:"
-  echo "  cargo build --release"
-  echo "Or download the GitHub release/Actions artifact for this CPU (omnicore-linux-$(uname -m))."
+  echo "  cargo build --release --no-default-features"
+  echo "Or download the GitHub Actions artifact (omnicore-linux-x86_64)."
   exit 1
 fi
 

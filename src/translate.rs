@@ -249,7 +249,7 @@ pub async fn translate_stored(
 pub fn translation_client() -> &'static reqwest::Client {
     static CLIENT: std::sync::OnceLock<reqwest::Client> = std::sync::OnceLock::new();
     CLIENT.get_or_init(|| {
-        reqwest::Client::builder()
+        crate::net::builder()
             .user_agent("Mozilla/5.0 (compatible; OmniCore/2.0)")
             .build()
             .expect("translate client")

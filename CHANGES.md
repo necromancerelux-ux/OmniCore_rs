@@ -1,9 +1,7 @@
-
 # OmniCore (Rust) — security & reliability fixes
 
-**Build status:** verified 2026-11-20 with Rust 1.97 — `cargo check` passes with default
-features (browser on) and with `--no-default-features`. The musl release builds (x86_64 and
-aarch64) run in GitHub Actions only; check the `build-release` run before deploying.
+**Not compiled.** No Rust toolchain was available when these were written. Run
+`cargo check && cargo clippy && cargo test` before deploying.
 
 ## Fixed
 | Area | Change |
@@ -109,24 +107,3 @@ New module `src/cards/extra.rs`:
 | `render_map_card` | Isometric fertile/plains diamond, alliance-colored cities, focus ring |
 
 Shared navy-glass frame + **OMNICORE** footer. Wire these from lookup handlers when the corresponding payload is available.
-
-
-## Build, deploy and CI fixes (2026-11-20)
-
-| Area | Change |
-|---|---|
-| ARM64 | `release.yml` now builds **both** `x86_64-unknown-linux-musl` and `aarch64-unknown-linux-musl` (native ARM runner). Upload `omnicore-linux-aarch64` to ARM hosts such as HidenCloud. |
-| Cargo.lock | The repo had **no `Cargo.lock`**, so every `--locked` CI step failed. It is now committed. |
-| Rust version | `sqlx 0.9` requires Rust 1.94; `rust-version` said 1.85 and the Dockerfile used `rust:1.85`. Both fixed (`rust-version = "1.94"`, `rust:1-bookworm`). |
-| Browser | Releases are built with the `browser` feature ON (it only launches Chromium when Oracle needs a token, then closes it). Chromium still has to exist on the host: `CHROME_PATH`, or `CHROMIUM_AUTO_INSTALL=1` in `.env`. Without it the bot falls back to Paste cURL. |
-| Release profile | `lto = "fat"`, `codegen-units = 1`, `strip = true`, `opt-level = 2`. `panic = "abort"` is deliberately **not** set: background-job restarts and poise panic handling need unwinding. |
-| starter.js | Picks the binary for the host CPU, refuses a wrong-CPU binary with a clear message, unpacks the release `.gz` itself, finds/downloads Chromium, and backs off after repeated crashes (5s, 10s, 20s ... 5 min, gives up after 8 quick crashes) instead of retrying every 5 s forever. |
-| Docker | Dockerfile builds for the machine's own CPU; `--build-arg WITH_CHROMIUM=1` adds Chromium. |
-| CI | `rust.yml` checks default features, `--no-default-features`, and runs tests, all with `--locked`. |
-| Warnings | Removed one needless `mut` in `cards/extra.rs`. |
-
-### Known gaps (not fixed here)
-- Card renderers for appointments, crowns, map, matchup history, prep points, progression and state-vs exist but **no command calls them** (compiler reports them as unused imports in `cards/mod.rs`).
-- `/redeem`, GitHub database backup, Gift/Player log categories, supervised restart of the Ministry sync loop.
-- `src/commands/interactions.rs` is ~12.5k lines in one file; split it when convenient (slow compiles).
-- Chromium's system libraries are not auto-installed on panels (the old Node bot had `tools/install-browser-libs.js`).

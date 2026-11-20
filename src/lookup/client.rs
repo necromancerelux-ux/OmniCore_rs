@@ -45,7 +45,7 @@ pub struct LookupClient {
 
 impl LookupClient {
     pub fn new(site: String, api: String, api_key: Option<String>) -> anyhow::Result<Self> {
-        let http = reqwest::Client::builder()
+        let http = crate::net::builder()
             .user_agent(BROWSER_UA)
             .timeout(Duration::from_secs(20))
             .connect_timeout(Duration::from_secs(10))

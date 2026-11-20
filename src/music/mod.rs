@@ -172,6 +172,29 @@ impl MusicManager {
             return Ok(());
         }
 
+        // lavalink-rs retries a dead node forever (an error every 15 s). Probe the
+        // port first so a missing Lavalink simply disables music.
+        let probe = tokio::time::timeout(
+            std::time::Duration::from_secs(5),
+            tokio::net::TcpStream::connect(cfg.hostname.as_str()),
+        )
+        .await;
+        match probe {
+            Ok(Ok(_)) => {}
+            Ok(Err(err)) => {
+                return Err(anyhow!(
+                    "no Lavalink server reachable at {} ({err}). Remove LAVALINK_HOST from .env to turn music off",
+                    cfg.hostname
+                ))
+            }
+            Err(_) => {
+                return Err(anyhow!(
+                    "Lavalink at {} timed out. Remove LAVALINK_HOST from .env to turn music off",
+                    cfg.hostname
+                ))
+            }
+        }
+
         *self.bot_id.lock().await = Some(bot_id);
 
         let node = NodeBuilder {

@@ -132,7 +132,7 @@ pub struct OracleClient {
 
 impl OracleClient {
     pub fn new(db: Db, cfg: OracleConfig) -> anyhow::Result<Self> {
-        let http = reqwest::Client::builder()
+        let http = crate::net::builder()
             .user_agent(UA)
             .timeout(Duration::from_secs(20))
             .connect_timeout(Duration::from_secs(10))

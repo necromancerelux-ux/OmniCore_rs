@@ -12172,7 +12172,7 @@ async fn push_guild_avatar(data: &Data, guild_id: u64, avatar_url: Option<&str>)
     let payload = match avatar_url {
         Some(url) => {
             const MAX_BYTES: usize = 10 * 1024 * 1024; // Discord caps the image at 10 MiB
-            let client = match reqwest::Client::builder()
+            let client = match crate::net::builder()
                 .user_agent("omnicore/2.0")
                 .build()
             {
@@ -12227,7 +12227,7 @@ async fn push_guild_avatar(data: &Data, guild_id: u64, avatar_url: Option<&str>)
         None => serde_json::json!({ "avatar": null }),
     };
 
-    let response = reqwest::Client::new()
+    let response = crate::net::client()
         .patch(format!(
             "https://discord.com/api/v10/guilds/{guild_id}/members/@me"
         ))

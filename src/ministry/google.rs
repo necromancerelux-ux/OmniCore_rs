@@ -28,10 +28,10 @@ pub struct GoogleStatus {
 }
 
 fn http() -> reqwest::Client {
-    reqwest::Client::builder()
+    crate::net::builder()
         .timeout(std::time::Duration::from_secs(30))
         .build()
-        .unwrap_or_else(|_| reqwest::Client::new())
+        .unwrap_or_else(|_| crate::net::client())
 }
 
 fn extract_code(input: &str) -> String {

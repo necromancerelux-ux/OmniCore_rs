@@ -26,6 +26,7 @@ mod logging;
 mod lookup;
 mod ministry;
 mod music;
+mod net;
 mod notifications;
 mod oracle;
 mod owner;
@@ -47,7 +48,7 @@ use std::collections::HashSet;
 use std::time::Instant;
 
 use poise::serenity_prelude as serenity;
-use serenity::{FullEvent, GatewayIntents, Http, UserId};
+use serenity::{FullEvent, GatewayIntents, UserId};
 
 use crate::config::Config;
 use crate::db::Db;
@@ -103,12 +104,20 @@ async fn main() -> anyhow::Result<()> {
 
     let music = MusicManager::new(cfg.lavalink.clone());
 
+    // One Discord REST client for the whole bot, built with the TLS/proxy options
+    // from `net.rs` (fixes `UnknownIssuer` on hosts with a custom CA).
+    let discord_http = std::sync::Arc::new(
+        serenity::http::HttpBuilder::new(token.clone())
+            .client(crate::net::client())
+            .build(),
+    );
+
     logging::banner(VERSION, "rust", cfg.music_enabled(), cfg.browser_enabled);
 
     let data = Data {
         cfg: cfg.clone(),
         db,
-        discord_http: std::sync::Arc::new(Http::new(&token)),
+        discord_http: discord_http.clone(),
         music,
         lookup,
         oracle,
@@ -196,7 +205,7 @@ async fn main() -> anyhow::Result<()> {
         })
         .build();
 
-    let mut client = serenity::ClientBuilder::new(token, intents())
+    let mut client = serenity::ClientBuilder::new_with_http(discord_http, intents())
         .framework(framework)
         .await?;
 

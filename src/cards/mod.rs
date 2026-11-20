@@ -292,7 +292,7 @@ pub(crate) fn text_width(size: f32, text: &str) -> f32 {
 /// Fetch+decode a remote image. PNG/JPEG/WebP via `image`; `image/svg+xml`
 /// via resvg. Returns `None` on any failure (icons are decorative).
 pub(crate) async fn fetch_image(url: &str, referer: &str) -> Option<Pixmap> {
-    let client = reqwest::Client::builder()
+    let client = crate::net::builder()
         .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) omnicore")
         .build()
         .ok()?;

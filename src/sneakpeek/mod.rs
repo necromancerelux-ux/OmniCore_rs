@@ -40,7 +40,7 @@ async fn fetch(url: &str) -> Result<String> {
             .map(|d| d.as_millis())
             .unwrap_or(0)
     );
-    let response = reqwest::Client::builder()
+    let response = crate::net::builder()
         .user_agent(USER_AGENT)
         .timeout(std::time::Duration::from_secs(FETCH_TIMEOUT_SECS))
         .connect_timeout(std::time::Duration::from_secs(10))

@@ -2,8 +2,7 @@
 name = "omnicore"
 version = "2.0.0"
 edition = "2021"
-# sqlx 0.9 needs Rust 1.94+ (1.85 here made `cargo build` fail on older toolchains / the old Docker image)
-rust-version = "1.94"
+rust-version = "1.85"
 description = "OmniCore — the community Discord bot, rewritten in Rust"
 license = "MIT"
 publish = false
@@ -93,11 +92,3 @@ chrono-tz = "0.10.4"
 tempfile = "3"
 
 [package.metadata.release]
-
-# Small + fast binary for the panel. NOTE: do not set panic = "abort": background
-# jobs and poise rely on unwinding to survive/log a panic and restart (see CHANGES.md).
-[profile.release]
-opt-level = 2
-lto = "fat"
-codegen-units = 1
-strip = true
