@@ -892,7 +892,7 @@ pub fn render_appointments_card(data: &AppointmentsCard) -> anyhow::Result<Vec<u
     let cell_h = 140.0f32;
     let gap = 16.0f32;
 
-    let mut draw_grid =
+    let draw_grid =
         |canvas: &mut Pixmap, title: &str, count: &str, seats: &[AppointmentSeat], start_y: f32| {
             draw_text(canvas, 12.0, 50.0, start_y, title, LABEL, true);
             let cw = text_width(12.0, count);
