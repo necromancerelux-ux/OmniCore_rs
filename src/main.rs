@@ -104,15 +104,16 @@ async fn main() -> anyhow::Result<()> {
 
     let music = MusicManager::new(cfg.lavalink.clone());
 
-    // One Discord REST client for the whole bot, built with the TLS/proxy options
-    // from `net.rs` (fixes `UnknownIssuer` on hosts with a custom CA).
-    let discord_http = std::sync::Arc::new(
+    // Discord REST clients built with the TLS/proxy options from `net.rs`
+    // (fixes `UnknownIssuer` on hosts with a custom CA). reqwest clients are cheap
+    // to clone and share one connection pool.
+    let rest_client = crate::net::client();
+    let make_http = || {
         serenity::http::HttpBuilder::new(token.clone())
-            .client(crate::net::client())
-            .build(),
-    );
-
-    logging::banner(VERSION, "rust", cfg.music_enabled(), cfg.browser_enabled);
+            .client(rest_client.clone())
+            .build()
+    };
+    let discord_http = std::sync::Arc::new(make_http());
 
     let data = Data {
         cfg: cfg.clone(),
@@ -205,7 +206,7 @@ async fn main() -> anyhow::Result<()> {
         })
         .build();
 
-    let mut client = serenity::ClientBuilder::new_with_http(discord_http, intents())
+    let mut client = serenity::ClientBuilder::new_with_http(make_http(), intents())
         .framework(framework)
         .await?;
 
